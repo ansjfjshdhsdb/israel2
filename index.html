@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🇮🇱Еврейский шашлычек🗡️🌹</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: white;
+    background: #0b1a3a;
+    overflow-x: hidden;
+}
+
+.bg {
+    position: fixed;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        120deg,
+        white 10%, #0038b8 25%,
+        white 35%, #b30000 50%,
+        white 65%, #0038b8 80%,
+        white 100%
+    );
+    opacity: 0.25;
+    animation: move 12s linear infinite;
+    z-index: -1;
+}
+
+@keyframes move {
+    0% { transform: translate(0,0); }
+    100% { transform: translate(-40%,-20%); }
+}
+
+header {
+    text-align: center;
+    padding: 15px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 10px;
+}
+
+button {
+    background: #0038b8;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #0050ff;
+}
+
+.box {
+    margin: 15px;
+    padding: 15px;
+    background: rgba(0,0,0,0.45);
+    border-radius: 12px;
+}
+
+.card {
+    background: rgba(255,255,255,0.15);
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.card-info {
+    flex-grow: 1;
+}
+
+.card-info p {
+    margin: 5px 0 0 0;
+    font-size: 14px;
+    color: #ddd;
+}
+
+img.avatar {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #333;
+}
+
+.section { display: none; }
+
+/* Стили модального окна */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 50;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #0b1a3a;
+    padding: 20px;
+    border: 2px solid #0038b8;
+    border-radius: 12px;
+    z-index: 100;
+    width: 90%;
+    max-width: 300px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+}
+
+.modal input, .modal textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    background: rgba(255,255,255,0.9);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.btn-danger { background: #b30000; }
+.btn-danger:hover { background: #ff1a1a; }
+</style>
+
+</head>
+
+<body>
+
+<div class="bg"></div>
+
+<header>
+    🇮🇱 Еврейский шашлычек🗡️🌹
+</header>
+
+<div class="menu">
+    <button onclick="show('home')">Главная</button>
+    <button onclick="show('interpol')">Интерпол</button>
+    <button onclick="show('dripe')">Парни на дрипе</button>
+    <button onclick="show('wanted')">Розыск Лейма</button>
+    <button onclick="login()" id="loginBtn">🔐 Админ</button>
+</div>
+
+<div id="home" class="box section" style="display:block;">
+    <h2>Добро пожаловать 👋</h2>
+    <p>RP система 🇮🇱🇬🇪</p>
+    <p>Выберите раздел в меню выше.</p>
+</div>
+
+<div id="interpol" class="box section"></div>
+<div id="dripe" class="box section"></div>
+<div id="wanted" class="box section"></div>
+
+<div class="overlay" id="overlay"></div>
+<div class="modal" id="addModal">
+    <h3>Добавить запись</h3>
+    <input type="text" id="addName" placeholder="Имя">
+    <textarea id="addInfo" placeholder="Инфо" rows="3"></textarea>
+    <input type="file" id="addPhoto" accept="image/*">
+    <div class="modal-buttons">
+        <button onclick="saveNewEntry()">Сохранить</button>
+        <button class="btn-danger" onclick="closeModal()">Отмена</button>
+    </div>
+</div>
+
+<script>
+let ADMIN = false;
+const PASS = "ISRAEL-333";
+let currentCategory = "";
+
+let db = {
+    interpol: [],
+    dripe: [],
+    wanted: []
+};
+
+function show(id) {
+    document.querySelectorAll(".section").forEach(x => x.style.display = "none");
+    document.getElementById(id).style.display = "block";
+}
+
+function login() {
+    if (ADMIN) {
+        alert("Вы уже в режиме админа.");
+        return;
+    }
+    let p = prompt("Введите пароль:");
+    if (p === PASS) {
+        ADMIN = true;
+        document.getElementById("loginBtn").innerText = "🔓 Админ (в сети)";
+        document.getElementById("loginBtn").style.background = "#008000";
+        alert("Админ режим включен");
+        renderAll();
+    } else if (p !== null) {
+        alert("Неверный пароль!");
+    }
+}
+
+// Открытие модального окна
+function openModal(cat) {
+    if (!ADMIN) return;
+    currentCategory = cat;
+    document.getElementById("addName").value = "";
+    document.getElementById("addInfo").value = "";
+    document.getElementById("addPhoto").value = "";
+    
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("addModal").style.display = "block";
+}
+
+function closeModal() {
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("addModal").style.display = "none";
+}
+
+// Функция сжатия изображения, чтобы localStorage не ломался
+function compressImage(file, callback) {
+    if (!file) return callback("");
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 300; // Сжимаем до 300 пикселей ширины
+            const scaleSize = MAX_WIDTH / img.width;
+            
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Конвертируем в JPEG с качеством 70%
+            callback(canvas.toDataURL('image/jpeg', 0.7)); 
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveNewEntry() {
+    let name = document.getElementById("addName").value.trim();
+    let info = document.getElementById("addInfo").value.trim();
+    let file = document.getElementById("addPhoto").files[0];
+
+    if (!name) {
+        alert("Пожалуйста, введите имя!");
+        return;
+    }
+
+    compressImage(file, function(photoData) {
+        db[currentCategory].push({
+            id: Date.now(),
+            name: name,
+            info: info,
+            photo: photoData
+        });
+
+        save();
+        renderAll();
+        closeModal();
+    });
+}
+
+function del(cat, id) {
+    if (!ADMIN) return;
+    if (confirm("Точно удалить?")) {
+        db[cat] = db[cat].filter(x => x.id !== id);
+        save();
+        renderAll();
+    }
+}
+
+function save() {
+    try {
+        localStorage.setItem("shashlyk", JSON.stringify(db));
+    } catch (e) {
+        alert("Ошибка! Память переполнена. Удалите старые записи, чтобы добавить новые.");
+        console.error(e);
+    }
+}
+
+function load() {
+    let s = localStorage.getItem("shashlyk");
+    if (s) {
+        try {
+            db = JSON.parse(s);
+        } catch (e) {
+            console.error("Ошибка чтения базы данных.");
+        }
+    }
+}
+
+function render(cat) {
+    let el = document.getElementById(cat);
+    
+    let title = "";
+    if(cat === "interpol") title = "Интерпол";
+    if(cat === "dripe") title = "Парни на дрипе";
+    if(cat === "wanted") title = "Розыск Лейма";
+
+    el.innerHTML = `
+        <h2>${title}</h2>
+        ${ADMIN ? `<button onclick="openModal('${cat}')">➕ Добавить</button>` : ""}
+    ` +
+    db[cat].map(x => `
+        <div class="card">
+            ${x.photo ? `<img src="${x.photo}" class="avatar">` : `<div class="avatar" style="display:flex;align-items:center;justify-content:center;font-size:30px;">👤</div>`}
+            
+            <div class="card-info">
+                <b>${x.name}</b>
+                <p>${x.info}</p>
+            </div>
+
+            ${ADMIN ? `<button class="btn-danger" onclick="del('${cat}', ${x.id})">❌</button>` : ""}
+        </div>
+    `).join("");
+}
+
+function renderAll() {
+    render("interpol");
+    render("dripe");
+    render("wanted");
+}
+
+load();
+renderAll();
+</script>
+
+</body>
+</html>
